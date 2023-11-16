@@ -3,6 +3,60 @@
                data = <<>> :: binary()}).
 -type text() :: #text{}.
 
+-xml(muc_light_create,
+     #elem{name = <<"query">>,
+           xmlns = <<"urn:xmpp:muclight:0#create">>,
+	   module = 'muc_light',
+           result = {muc_light_create, '$configuration', '$occupants'},
+           refs = [#ref{name = muc_light_configuration,label = '$configuration'},
+                   #ref{name = muc_light_occupants,label = '$occupants'}]}).
+
+-xml(muc_light_configuration,
+     #elem{name = <<"configuration">>,
+	   xmlns = <<"urn:xmpp:muclight:0#create">>,
+	   module = 'muc_light',
+	   result = {muc_light_configuration, '$roomname'},
+	   refs = [#ref{name = muc_light_roomname, label = '$roomname'}]}).
+
+-xml(muc_light_roomname,
+     #elem{name = <<"roomname">>,
+	   xmlns = <<"urn:xmpp:muclight:0#create">>,
+	   module = 'muc_light',
+	   result = {roomname, '$roomname'},
+	   cdata = #cdata{label = '$roomname', required = true}}).
+
+-xml(muc_light_occupants,
+     #elem{name = <<"occupants">>,
+	   xmlns = <<"urn:xmpp:muclight:0#create">>,
+	   module = 'muc_light',
+	   result = {muc_light_occupants,'$users'},
+	   refs = [#ref{name = muc_light_user, label = '$users'}]}).
+
+-xml(muc_light_aff,
+     #elem{name = <<"query">>,
+	   xmlns = <<"urn:xmpp:muclight:0#affiliations">>,
+	   module = 'muc_light',
+	   result = {muc_light_aff,'$users'},
+       refs = [#ref{name = muc_light_user, label = '$users'}]}).
+
+-xml(muc_light_x,
+     #elem{name = <<"x">>,
+	   xmlns = <<"urn:xmpp:muclight:0#affiliations">>,
+	   module = 'muc_light',
+	   result = {muc_light_x,'$users'},
+	   refs = [#ref{name = muc_light_user, label = '$users'}]}).
+
+-xml(muc_light_user,
+     #elem{name = <<"user">>,
+	   xmlns = [<<"urn:xmpp:muclight:0#create">>, <<"urn:xmpp:muclight:0#affiliations">>],
+	   module = 'muc_light',
+	   result = {muc_light_user, '$affiliation', '$muc_light_user'},
+	   attrs = [#attr{name = <<"affiliation">>, default = <<"">>}],
+	   cdata = #cdata{label = '$muc_light_user',
+       			  required = true,
+       			  dec = {jid, decode, []},
+       			  enc = {jid, encode, []}}}).
+
 -xml(jidprep,
      #elem{name = <<"jid">>,
 	   xmlns = <<"urn:xmpp:jidprep:0">>,
@@ -186,6 +240,22 @@ record(group_query, {status = <<>> :: binary(),
                               #attr{name = <<"end_time">>,default = <<"">>},
                               #attr{name = <<"status">>,default = <<"">>}],
                        cdata = #cdata{default = <<"">>, label = '$result_type'}}).
+
+-xml(recentchat_item,
+     #elem{name = <<"item">>,
+           xmlns = <<"jabber:iq:recentchat:0">>,
+           result = {recentchat_item, '$type', '$value'},
+           attrs = [#attr{name = <<"type">>},
+                    #attr{name = <<"value">>}]}).
+
+-xml(recentchat_item_list,
+     #elem{name = <<"list">>,
+           xmlns = <<"jabber:iq:recentchat:0">>,
+           result = {recentchat_item_list, '$name', '$items'},
+           attrs = [#attr{name = <<"name">>,
+                          required = true}],
+           refs = [#ref{name = recentchat_item,
+                        label = '$items'}]}).
 
 -xml(user_activities,
      #elem{name = <<"query">>,
