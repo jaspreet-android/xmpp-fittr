@@ -234,6 +234,9 @@
                       sent_to = <<>> :: binary()}).
 -type acknowledge() :: #acknowledge{}.
 
+-record(roomname, {roomname = <<>> :: binary()}).
+-type roomname() :: #roomname{}.
+
 -record(mix_leave, {xmlns = <<>> :: binary()}).
 -type mix_leave() :: #mix_leave{}.
 
@@ -295,6 +298,9 @@
                    stanza = iq :: 'iq' | 'message'}).
 -type ibb_open() :: #ibb_open{}.
 
+-record(muc_light_configuration, {roomname = [] :: [#roomname{}]}).
+-type muc_light_configuration() :: #muc_light_configuration{}.
+
 -record(roster_notification, {roster_notification = <<>> :: binary()}).
 -type roster_notification() :: #roster_notification{}.
 
@@ -329,6 +335,16 @@
 -record(x509_csr, {name = <<>> :: binary(),
                    der = <<>> :: binary()}).
 -type x509_csr() :: #x509_csr{}.
+
+-record(muc_light_user, {affiliation = <<>> :: binary(),
+                         muc_light_user :: jid:jid()}).
+-type muc_light_user() :: #muc_light_user{}.
+
+-record(muc_light_x, {users = [] :: [#muc_light_user{}]}).
+-type muc_light_x() :: #muc_light_x{}.
+
+-record(muc_light_aff, {users = [] :: [#muc_light_user{}]}).
+-type muc_light_aff() :: #muc_light_aff{}.
 
 -record(participants, {participant = [] :: [#participant{}]}).
 -type participants() :: #participants{}.
@@ -545,8 +561,8 @@
                error :: 'undefined' | #stat_error{}}).
 -type stat() :: #stat{}.
 
--record(addresses, {list = [] :: [#address{}]}).
--type addresses() :: #addresses{}.
+-record(muc_light_occupants, {users = [] :: [#muc_light_user{}]}).
+-type muc_light_occupants() :: #muc_light_occupants{}.
 
 -record(reactions, {msgid = <<>> :: binary()}).
 -type reactions() :: #reactions{}.
@@ -559,6 +575,9 @@
 
 -record(users, {user = [] :: [#buser{}]}).
 -type users() :: #users{}.
+
+-record(addresses, {list = [] :: [#address{}]}).
+-type addresses() :: #addresses{}.
 
 -record(starttls, {required = false :: boolean()}).
 -type starttls() :: #starttls{}.
@@ -675,6 +694,14 @@
 
 -record(block, {items = [] :: [#block_item{}]}).
 -type block() :: #block{}.
+
+-record(recentchat_item, {type = <<>> :: binary(),
+                          value = <<>> :: binary()}).
+-type recentchat_item() :: #recentchat_item{}.
+
+-record(recentchat_item_list, {name = <<>> :: binary(),
+                               items = [] :: [#recentchat_item{}]}).
+-type recentchat_item_list() :: #recentchat_item_list{}.
 
 -record(disco_item, {jid :: jid:jid(),
                      name = <<>> :: binary(),
@@ -955,6 +982,10 @@
 
 -record(vcard_xupdate, {hash :: 'undefined' | binary()}).
 -type vcard_xupdate() :: #vcard_xupdate{}.
+
+-record(muc_light_create, {configuration = [] :: [#muc_light_configuration{}],
+                           occupants = [] :: [#muc_light_occupants{}]}).
+-type muc_light_create() :: #muc_light_create{}.
 
 -record(bytestreams, {hosts = [] :: [#streamhost{}],
                       used :: undefined | jid:jid(),
@@ -1664,6 +1695,12 @@
                         muc_history() |
                         muc_invite() |
                         muc_item() |
+                        muc_light_aff() |
+                        muc_light_configuration() |
+                        muc_light_create() |
+                        muc_light_occupants() |
+                        muc_light_user() |
+                        muc_light_x() |
                         muc_owner() |
                         muc_subscribe() |
                         muc_subscription() |
@@ -1709,9 +1746,12 @@
                         recall() |
                         receipt_request() |
                         receipt_response() |
+                        recentchat_item() |
+                        recentchat_item_list() |
                         redirect() |
                         register() |
                         report() |
+                        roomname() |
                         roster_coverimg() |
                         roster_designation() |
                         roster_email() |

@@ -48,12 +48,38 @@ set_els(Term, Els) ->
     Mod = get_mod(Term),
     Mod:set_els(Term, Els).
 
+do_decode(<<"list">>, <<"jabber:iq:recentchat:0">>, El,
+          Opts) ->
+    decode_recentchat_item_list(<<"jabber:iq:recentchat:0">>,
+                                Opts,
+                                El);
+do_decode(<<"item">>, <<"jabber:iq:recentchat:0">>, El,
+          Opts) ->
+    decode_recentchat_item(<<"jabber:iq:recentchat:0">>,
+                           Opts,
+                           El);
 do_decode(Name, <<>>, _, _) ->
     erlang:error({xmpp_codec, {missing_tag_xmlns, Name}});
 do_decode(Name, XMLNS, _, _) ->
     erlang:error({xmpp_codec, {unknown_tag, Name, XMLNS}}).
 
-tags() -> [].
+tags() ->
+    [{<<"list">>, <<"jabber:iq:recentchat:0">>},
+     {<<"item">>, <<"jabber:iq:recentchat:0">>}].
+
+do_encode({recentchat_item, _, _} = Item, TopXMLNS) ->
+    encode_recentchat_item(Item, TopXMLNS);
+do_encode({recentchat_item_list, _, _} = List,
+          TopXMLNS) ->
+    encode_recentchat_item_list(List, TopXMLNS).
+
+do_get_name({recentchat_item, _, _}) -> <<"item">>;
+do_get_name({recentchat_item_list, _, _}) -> <<"list">>.
+
+do_get_ns({recentchat_item, _, _}) ->
+    <<"jabber:iq:recentchat:0">>;
+do_get_ns({recentchat_item_list, _, _}) ->
+    <<"jabber:iq:recentchat:0">>.
 
 register_module(Mod) ->
     register_module(Mod, xmpp_codec_external).
@@ -212,6 +238,8 @@ recompile_resolver(Mods, ResolverMod) ->
                                              Code),
     ok.
 
+pp(recentchat_item, 2) -> [type, value];
+pp(recentchat_item_list, 2) -> [name, items];
 pp(xmlel, 3) -> [name, attrs, children];
 pp(Name, Arity) ->
     try get_mod(erlang:make_tuple(Arity + 1,
@@ -223,7 +251,8 @@ pp(Name, Arity) ->
         error:badarg -> no
     end.
 
-records() -> [].
+records() ->
+    [{recentchat_item, 2}, {recentchat_item_list, 2}].
 
 get_mod(<<"status">>, <<"jabber:server">>) -> rfc6120;
 get_mod(<<"priority">>,
@@ -333,33 +362,20 @@ get_mod(<<"purge">>,
     xep0060;
 get_mod(<<"with">>, <<"urn:xmpp:mam:tmp">>) -> xep0313;
 get_mod(<<"address">>, <<"urn:xmpp:sic:0">>) -> xep0279;
-get_mod(<<"profile">>, <<"jabber:iq:roster">>) ->
-    rfc6121;
 get_mod(<<"failure">>,
         <<"urn:ietf:params:xml:ns:xmpp-sasl">>) ->
     rfc6120;
 get_mod(<<"PRIVATE">>, <<"vcard-temp">>) -> xep0054;
-get_mod(<<"options">>,
-        <<"http://jabber.org/protocol/pubsub">>) ->
-    xep0060;
 get_mod(<<"pubsub">>,
         <<"http://jabber.org/protocol/pubsub">>) ->
     xep0060;
-get_mod(<<"disable">>, <<"urn:xmpp:carbons:2">>) ->
-    xep0280;
-get_mod(<<"mix">>, <<"urn:xmpp:mix:presence:0">>) ->
-    xep0403;
+get_mod(<<"x">>,
+        <<"urn:xmpp:muclight:0#affiliations">>) ->
+    muc_light;
 get_mod(<<"broadcastname">>,
         <<"jabber:iq:mod_broadcast">>) ->
     broadcast;
-get_mod(<<"unsupported-method">>,
-        <<"http://jabber.org/protocol/compress">>) ->
-    xep0138;
 get_mod(<<"tzo">>, <<"urn:xmpp:time">>) -> xep0202;
-get_mod(<<"POSTAL">>, <<"vcard-temp">>) -> xep0054;
-get_mod(<<"payload-too-big">>,
-        <<"http://jabber.org/protocol/pubsub#errors">>) ->
-    xep0060;
 get_mod(<<"presence-out">>, <<"jabber:iq:privacy">>) ->
     xep0016;
 get_mod(<<"mechanism-too-weak">>,
@@ -543,6 +559,9 @@ get_mod(<<"service">>, <<"urn:xmpp:extdisco:2">>) ->
 get_mod(<<"pointer">>,
         <<"urn:xmpp:avatar:metadata">>) ->
     xep0084;
+get_mod(<<"occupants">>,
+        <<"urn:xmpp:muclight:0#create">>) ->
+    muc_light;
 get_mod(<<"not-authorized">>,
         <<"urn:ietf:params:xml:ns:xmpp-stanzas">>) ->
     rfc6120;
@@ -566,6 +585,9 @@ get_mod(<<"stream:stream">>, <<"jabber:client">>) ->
 get_mod(<<"data">>, <<"urn:xmpp:bob">>) -> xep0231;
 get_mod(<<"success">>, <<"urn:xmpp:jingle:1">>) ->
     xep0166;
+get_mod(<<"query">>,
+        <<"urn:xmpp:muclight:0#affiliations">>) ->
+    muc_light;
 get_mod(<<"method">>,
         <<"http://jabber.org/protocol/compress">>) ->
     xep0138;
@@ -677,6 +699,9 @@ get_mod(<<"info">>, <<"urn:xmpp:avatar:metadata">>) ->
 get_mod(<<"date">>,
         <<"urn:xmpp:jingle:apps:file-transfer:5">>) ->
     xep0234;
+get_mod(<<"query">>,
+        <<"urn:xmpp:muclight:0#create">>) ->
+    muc_light;
 get_mod(<<"not-allowed">>,
         <<"urn:ietf:params:xml:ns:xmpp-stanzas">>) ->
     rfc6120;
@@ -913,6 +938,9 @@ get_mod(<<"payload-required">>,
 get_mod(<<"destroy">>, <<"urn:xmpp:mix:core:0">>) ->
     xep0369;
 get_mod(<<"address">>, <<"urn:xmpp:sic:1">>) -> xep0279;
+get_mod(<<"user">>,
+        <<"urn:xmpp:muclight:0#affiliations">>) ->
+    muc_light;
 get_mod(<<"error">>,
         <<"http://jabber.org/protocol/stats">>) ->
     xep0039;
@@ -1087,6 +1115,8 @@ get_mod(<<"TEL">>, <<"vcard-temp">>) -> xep0054;
 get_mod(<<"prefs">>, <<"urn:xmpp:mam:tmp">>) -> xep0313;
 get_mod(<<"captcha">>, <<"urn:xmpp:captcha">>) ->
     xep0158;
+get_mod(<<"item">>, <<"jabber:iq:recentchat:0">>) ->
+    xmpp_codec;
 get_mod(<<"identity">>,
         <<"http://jabber.org/protocol/disco#info">>) ->
     xep0030;
@@ -1468,6 +1498,9 @@ get_mod(<<"incompatible-parameters">>,
 get_mod(<<"candidate">>,
         <<"urn:xmpp:jingle:transports:s5b:1">>) ->
     xep0260;
+get_mod(<<"configuration">>,
+        <<"urn:xmpp:muclight:0#create">>) ->
+    muc_light;
 get_mod(<<"subject">>, <<"jabber:server">>) -> rfc6120;
 get_mod(<<"bad-namespace-prefix">>,
         <<"urn:ietf:params:xml:ns:xmpp-streams">>) ->
@@ -1516,6 +1549,8 @@ get_mod(<<"gone">>,
 get_mod(<<"query">>,
         <<"http://jabber.org/protocol/muc#owner">>) ->
     xep0045;
+get_mod(<<"user">>, <<"urn:xmpp:muclight:0#create">>) ->
+    muc_light;
 get_mod(<<"os">>, <<"jabber:iq:version">>) -> xep0092;
 get_mod(<<"coverimg">>, <<"jabber:iq:roster">>) ->
     rfc6121;
@@ -1670,6 +1705,9 @@ get_mod(<<"history">>,
 get_mod(<<"inactive">>, <<"urn:xmpp:csi:0">>) ->
     xep0352;
 get_mod(<<"presence">>, <<"jabber:client">>) -> rfc6120;
+get_mod(<<"roomname">>,
+        <<"urn:xmpp:muclight:0#create">>) ->
+    muc_light;
 get_mod(<<"INTL">>, <<"vcard-temp">>) -> xep0054;
 get_mod(<<"item">>,
         <<"http://jabber.org/protocol/muc#admin">>) ->
@@ -1677,6 +1715,8 @@ get_mod(<<"item">>,
 get_mod(<<"range">>,
         <<"urn:xmpp:jingle:apps:file-transfer:5">>) ->
     xep0234;
+get_mod(<<"list">>, <<"jabber:iq:recentchat:0">>) ->
+    xmpp_codec;
 get_mod(<<"client-leave">>, <<"urn:xmpp:mix:pam:2">>) ->
     xep0405;
 get_mod(<<"request">>, <<"urn:xmpp:http:upload">>) ->
@@ -1734,6 +1774,22 @@ get_mod(<<"internal-server-error">>,
 get_mod(<<"put">>,
         <<"eu:siacs:conversations:http:upload">>) ->
     xep0363;
+get_mod(<<"profile">>, <<"jabber:iq:roster">>) ->
+    rfc6121;
+get_mod(<<"options">>,
+        <<"http://jabber.org/protocol/pubsub">>) ->
+    xep0060;
+get_mod(<<"disable">>, <<"urn:xmpp:carbons:2">>) ->
+    xep0280;
+get_mod(<<"mix">>, <<"urn:xmpp:mix:presence:0">>) ->
+    xep0403;
+get_mod(<<"unsupported-method">>,
+        <<"http://jabber.org/protocol/compress">>) ->
+    xep0138;
+get_mod(<<"POSTAL">>, <<"vcard-temp">>) -> xep0054;
+get_mod(<<"payload-too-big">>,
+        <<"http://jabber.org/protocol/pubsub#errors">>) ->
+    xep0060;
 get_mod(Name, XMLNS) ->
     xmpp_codec_external:lookup(Name, XMLNS).
 
@@ -1788,6 +1844,7 @@ get_mod({recall, _, _}) -> recall;
 get_mod({disco_items, _, _, _}) -> xep0030;
 get_mod({vcard_nickName, _}) -> xep0054;
 get_mod({vcard_xupdate, _}) -> xep0153;
+get_mod({recentchat_item, _, _}) -> xmpp_codec;
 get_mod({user_activities,
          _,
          _,
@@ -1871,6 +1928,7 @@ get_mod({mam_archived, _, _}) -> xep0313;
 get_mod({delegated, _, _}) -> xep0355;
 get_mod({text, _, _}) -> xep0234;
 get_mod({muc_hat, _, _}) -> xep0317;
+get_mod({muc_light_create, _, _}) -> muc_light;
 get_mod({xmpp_session, _}) -> rfc3921;
 get_mod({ping}) -> xep0199;
 get_mod({time, _, _}) -> xep0202;
@@ -1956,8 +2014,6 @@ get_mod({adhoc_command, _, _, _, _, _, _, _, _}) ->
 get_mod({media, _, _, _}) -> xep0221;
 get_mod({broadcastid, _}) -> broadcast;
 get_mod({logout, _}) -> logout;
-get_mod({identity, _, _, _, _}) -> xep0030;
-get_mod({redirect, _}) -> rfc6120;
 get_mod({vcard_temp,
          _,
          _,
@@ -1997,27 +2053,22 @@ get_mod({vcard_temp,
          _,
          _}) ->
     xep0054;
-get_mod({muc_history, _, _, _, _}) -> xep0045;
 get_mod({muc_owner, _, _, _}) -> xep0045;
 get_mod({mix_setnick, _, _}) -> xep0369;
 get_mod({mark_received, _}) -> xep0333;
 get_mod({mark_displayed, _}) -> xep0333;
 get_mod({mark_acknowledged, _}) -> xep0333;
-get_mod({jingle_ft_file, _, _, _, _, _, _, _, _}) ->
-    xep0234;
 get_mod({broadcast, _, _, _, _, _, _, _, _, _, _}) ->
     broadcast;
 get_mod({broadcastname, _}) -> broadcast;
 get_mod({profile_update, _}) -> profile_update;
 get_mod({bookmark_url, _, _}) -> xep0048;
 get_mod({gone, _}) -> rfc6120;
-get_mod({sasl_response, _}) -> rfc6120;
 get_mod({chatstate, _}) -> xep0085;
-get_mod({muc_unique, _}) -> xep0045;
 get_mod({mix_leave, _}) -> xep0369;
 get_mod({receipt_response, _}) -> xep0184;
 get_mod({sic, _, _, _}) -> xep0279;
-get_mod({idle, _}) -> xep0319;
+get_mod({muc_light_aff, _}) -> muc_light;
 get_mod({sm_resumed, _, _, _}) -> xep0198;
 get_mod({offline_item, _, _}) -> xep0013;
 get_mod({mix_join, _, _, _, _, _, _, _, _, _}) ->
@@ -2035,6 +2086,7 @@ get_mod({mix_client_leave, _, _, _}) -> xep0405;
 get_mod({thumbnail, _, _, _, _}) -> xep0264;
 get_mod({delegation, _, _}) -> xep0355;
 get_mod({x509_challenge, _, _, _}) -> xep0417;
+get_mod({muc_light_x, _}) -> muc_light;
 get_mod({sm_enabled, _, _, _, _, _}) -> xep0198;
 get_mod({mediacall, _, _, _, _, _, _}) -> call;
 get_mod({vcard_email, _, _, _, _, _, _}) -> xep0054;
@@ -2062,6 +2114,7 @@ get_mod({bob_data, _, _, _, _}) -> xep0231;
 get_mod({markable}) -> xep0333;
 get_mod({bind, _, _}) -> rfc6120;
 get_mod({rsm_first, _, _}) -> xep0059;
+get_mod({muc_light_configuration, _}) -> muc_light;
 get_mod({roster_notification, _}) -> rfc6121;
 get_mod({caps, _, _, _, _}) -> xep0115;
 get_mod({xdata, _, _, _, _, _, _}) -> xep0004;
@@ -2139,6 +2192,7 @@ get_mod({mix_client_join, _, _, _, _}) -> xep0405;
 get_mod({sm_a, _, _}) -> xep0198;
 get_mod({jingle_s5b_transport, _, _, _, _, _, _, _}) ->
     xep0260;
+get_mod({muc_light_user, _, _}) -> muc_light;
 get_mod({privacy_query, _, _, _}) -> xep0016;
 get_mod({block, _}) -> xep0191;
 get_mod({ps_subscription, _, _, _, _, _, _}) -> xep0060;
@@ -2150,6 +2204,7 @@ get_mod({jingle, _, _, _, _, _, _, _}) -> xep0166;
 get_mod({x509_csr, _, _}) -> xep0417;
 get_mod({services, _, _}) -> xep0215;
 get_mod({avatar_info, _, _, _, _, _, _}) -> xep0084;
+get_mod({recentchat_item_list, _, _}) -> xmpp_codec;
 get_mod({reaction, _, _, _, _, _, _, _, _}) ->
     message_reaction;
 get_mod({privacy_list, _, _}) -> xep0016;
@@ -2202,6 +2257,7 @@ get_mod({upload_slot_0, _, _, _}) -> xep0363;
 get_mod({delegation_query, _, _}) -> xep0355;
 get_mod({jingle_s5b_candidate, _, _, _, _, _, _}) ->
     xep0260;
+get_mod({muc_light_occupants, _}) -> muc_light;
 get_mod({group_participants, _}) -> mix_group_chat;
 get_mod({reactions, _}) -> message_reactions;
 get_mod({vcard_status, _}) -> xep0054;
@@ -2209,4 +2265,172 @@ get_mod({muc_subscriptions, _}) -> p1_mucsub;
 get_mod({mix, _, _, _, _}) -> xep0369;
 get_mod({addresses, _}) -> xep0033;
 get_mod({ibb_data, _, _, _}) -> xep0047;
+get_mod({identity, _, _, _, _}) -> xep0030;
+get_mod({redirect, _}) -> rfc6120;
+get_mod({muc_history, _, _, _, _}) -> xep0045;
+get_mod({jingle_ft_file, _, _, _, _, _, _, _, _}) ->
+    xep0234;
+get_mod({roomname, _}) -> muc_light;
+get_mod({sasl_response, _}) -> rfc6120;
+get_mod({muc_unique, _}) -> xep0045;
+get_mod({idle, _}) -> xep0319;
 get_mod(Record) -> xmpp_codec_external:lookup(Record).
+
+decode_recentchat_item_list(__TopXMLNS, __Opts,
+                            {xmlel, <<"list">>, _attrs, _els}) ->
+    Items = decode_recentchat_item_list_els(__TopXMLNS,
+                                            __Opts,
+                                            _els,
+                                            []),
+    Name = decode_recentchat_item_list_attrs(__TopXMLNS,
+                                             _attrs,
+                                             undefined),
+    {recentchat_item_list, Name, Items}.
+
+decode_recentchat_item_list_els(__TopXMLNS, __Opts, [],
+                                Items) ->
+    lists:reverse(Items);
+decode_recentchat_item_list_els(__TopXMLNS, __Opts,
+                                [{xmlel, <<"item">>, _attrs, _} = _el | _els],
+                                Items) ->
+    case xmpp_codec:get_attr(<<"xmlns">>,
+                             _attrs,
+                             __TopXMLNS)
+        of
+        <<"jabber:iq:recentchat:0">> ->
+            decode_recentchat_item_list_els(__TopXMLNS,
+                                            __Opts,
+                                            _els,
+                                            [decode_recentchat_item(<<"jabber:iq:recentchat:0">>,
+                                                                    __Opts,
+                                                                    _el)
+                                             | Items]);
+        _ ->
+            decode_recentchat_item_list_els(__TopXMLNS,
+                                            __Opts,
+                                            _els,
+                                            Items)
+    end;
+decode_recentchat_item_list_els(__TopXMLNS, __Opts,
+                                [_ | _els], Items) ->
+    decode_recentchat_item_list_els(__TopXMLNS,
+                                    __Opts,
+                                    _els,
+                                    Items).
+
+decode_recentchat_item_list_attrs(__TopXMLNS,
+                                  [{<<"name">>, _val} | _attrs], _Name) ->
+    decode_recentchat_item_list_attrs(__TopXMLNS,
+                                      _attrs,
+                                      _val);
+decode_recentchat_item_list_attrs(__TopXMLNS,
+                                  [_ | _attrs], Name) ->
+    decode_recentchat_item_list_attrs(__TopXMLNS,
+                                      _attrs,
+                                      Name);
+decode_recentchat_item_list_attrs(__TopXMLNS, [],
+                                  Name) ->
+    decode_recentchat_item_list_attr_name(__TopXMLNS, Name).
+
+encode_recentchat_item_list({recentchat_item_list,
+                             Name,
+                             Items},
+                            __TopXMLNS) ->
+    __NewTopXMLNS =
+        xmpp_codec:choose_top_xmlns(<<"jabber:iq:recentchat:0">>,
+                                    [],
+                                    __TopXMLNS),
+    _els =
+        lists:reverse('encode_recentchat_item_list_$items'(Items,
+                                                           __NewTopXMLNS,
+                                                           [])),
+    _attrs = encode_recentchat_item_list_attr_name(Name,
+                                                   xmpp_codec:enc_xmlns_attrs(__NewTopXMLNS,
+                                                                              __TopXMLNS)),
+    {xmlel, <<"list">>, _attrs, _els}.
+
+'encode_recentchat_item_list_$items'([], __TopXMLNS,
+                                     _acc) ->
+    _acc;
+'encode_recentchat_item_list_$items'([Items | _els],
+                                     __TopXMLNS, _acc) ->
+    'encode_recentchat_item_list_$items'(_els,
+                                         __TopXMLNS,
+                                         [encode_recentchat_item(Items,
+                                                                 __TopXMLNS)
+                                          | _acc]).
+
+decode_recentchat_item_list_attr_name(__TopXMLNS,
+                                      undefined) ->
+    erlang:error({xmpp_codec,
+                  {missing_attr, <<"name">>, <<"list">>, __TopXMLNS}});
+decode_recentchat_item_list_attr_name(__TopXMLNS,
+                                      _val) ->
+    _val.
+
+encode_recentchat_item_list_attr_name(_val, _acc) ->
+    [{<<"name">>, _val} | _acc].
+
+decode_recentchat_item(__TopXMLNS, __Opts,
+                       {xmlel, <<"item">>, _attrs, _els}) ->
+    {Type, Value} = decode_recentchat_item_attrs(__TopXMLNS,
+                                                 _attrs,
+                                                 undefined,
+                                                 undefined),
+    {recentchat_item, Type, Value}.
+
+decode_recentchat_item_attrs(__TopXMLNS,
+                             [{<<"type">>, _val} | _attrs], _Type, Value) ->
+    decode_recentchat_item_attrs(__TopXMLNS,
+                                 _attrs,
+                                 _val,
+                                 Value);
+decode_recentchat_item_attrs(__TopXMLNS,
+                             [{<<"value">>, _val} | _attrs], Type, _Value) ->
+    decode_recentchat_item_attrs(__TopXMLNS,
+                                 _attrs,
+                                 Type,
+                                 _val);
+decode_recentchat_item_attrs(__TopXMLNS, [_ | _attrs],
+                             Type, Value) ->
+    decode_recentchat_item_attrs(__TopXMLNS,
+                                 _attrs,
+                                 Type,
+                                 Value);
+decode_recentchat_item_attrs(__TopXMLNS, [], Type,
+                             Value) ->
+    {decode_recentchat_item_attr_type(__TopXMLNS, Type),
+     decode_recentchat_item_attr_value(__TopXMLNS, Value)}.
+
+encode_recentchat_item({recentchat_item, Type, Value},
+                       __TopXMLNS) ->
+    __NewTopXMLNS =
+        xmpp_codec:choose_top_xmlns(<<"jabber:iq:recentchat:0">>,
+                                    [],
+                                    __TopXMLNS),
+    _els = [],
+    _attrs = encode_recentchat_item_attr_value(Value,
+                                               encode_recentchat_item_attr_type(Type,
+                                                                                xmpp_codec:enc_xmlns_attrs(__NewTopXMLNS,
+                                                                                                           __TopXMLNS))),
+    {xmlel, <<"item">>, _attrs, _els}.
+
+decode_recentchat_item_attr_type(__TopXMLNS,
+                                 undefined) ->
+    <<>>;
+decode_recentchat_item_attr_type(__TopXMLNS, _val) ->
+    _val.
+
+encode_recentchat_item_attr_type(<<>>, _acc) -> _acc;
+encode_recentchat_item_attr_type(_val, _acc) ->
+    [{<<"type">>, _val} | _acc].
+
+decode_recentchat_item_attr_value(__TopXMLNS,
+                                  undefined) ->
+    <<>>;
+decode_recentchat_item_attr_value(__TopXMLNS, _val) ->
+    _val.
+
+encode_recentchat_item_attr_value(<<>>, _acc) -> _acc;
+encode_recentchat_item_attr_value(_val, _acc) ->
+    [{<<"value">>, _val} | _acc].
