@@ -369,6 +369,9 @@ get_mod(<<"PRIVATE">>, <<"vcard-temp">>) -> xep0054;
 get_mod(<<"pubsub">>,
         <<"http://jabber.org/protocol/pubsub">>) ->
     xep0060;
+get_mod(<<"query">>,
+        <<"urn:xmpp:muclight:0#destroy">>) ->
+    muc_light;
 get_mod(<<"x">>,
         <<"urn:xmpp:muclight:0#affiliations">>) ->
     muc_light;
@@ -2181,6 +2184,7 @@ get_mod({sm_resume, _, _, _}) -> xep0198;
 get_mod({push_enable, _, _, _}) -> xep0357;
 get_mod({jingle_ft_range, _, _, _}) -> xep0234;
 get_mod({db_result, _, _, _, _, _}) -> xep0220;
+get_mod({muc_light_destroy, _}) -> muc_light;
 get_mod({call, _, _, _, _, _, _}) -> call;
 get_mod({seen, _, _, _, _}) -> seen;
 get_mod({bookmark_conference, _, _, _, _, _}) ->

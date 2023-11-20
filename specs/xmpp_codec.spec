@@ -15,7 +15,8 @@
      #elem{name = <<"query">>,
            xmlns =  <<"urn:xmpp:muclight:0#destroy">>,
 	       module = 'muc_light',
-           result = true.
+           result = {muc_light_destroy, '$xmlns'},
+           attrs = [#attr{name = <<"xmlns">>}]}).
 
 -xml(muc_light_configuration,
      #elem{name = <<"configuration">>,

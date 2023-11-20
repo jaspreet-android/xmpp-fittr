@@ -492,6 +492,9 @@
                     sub_els = [] :: [xmpp_element() | fxml:xmlel()]}).
 -type db_verify() :: #db_verify{}.
 
+-record(muc_light_destroy, {xmlns = <<>> :: binary()}).
+-type muc_light_destroy() :: #muc_light_destroy{}.
+
 -record(nick, {name = <<>> :: binary()}).
 -type nick() :: #nick{}.
 
@@ -1698,6 +1701,7 @@
                         muc_light_aff() |
                         muc_light_configuration() |
                         muc_light_create() |
+                        muc_light_destroy() |
                         muc_light_occupants() |
                         muc_light_user() |
                         muc_light_x() |

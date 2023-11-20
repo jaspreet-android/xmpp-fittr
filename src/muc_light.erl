@@ -40,6 +40,11 @@ do_decode(<<"configuration">>,
     decode_muc_light_configuration(<<"urn:xmpp:muclight:0#create">>,
                                    Opts,
                                    El);
+do_decode(<<"query">>,
+          <<"urn:xmpp:muclight:0#destroy">>, El, Opts) ->
+    decode_muc_light_destroy(<<"urn:xmpp:muclight:0#destroy">>,
+                             Opts,
+                             El);
 do_decode(<<"query">>, <<"urn:xmpp:muclight:0#create">>,
           El, Opts) ->
     decode_muc_light_create(<<"urn:xmpp:muclight:0#create">>,
@@ -58,10 +63,19 @@ tags() ->
      {<<"occupants">>, <<"urn:xmpp:muclight:0#create">>},
      {<<"roomname">>, <<"urn:xmpp:muclight:0#create">>},
      {<<"configuration">>, <<"urn:xmpp:muclight:0#create">>},
+     {<<"query">>, <<"urn:xmpp:muclight:0#destroy">>},
      {<<"query">>, <<"urn:xmpp:muclight:0#create">>}].
 
 do_encode({muc_light_create, _, _} = Query, TopXMLNS) ->
     encode_muc_light_create(Query, TopXMLNS);
+do_encode({muc_light_destroy,
+           <<"urn:xmpp:muclight:0#destroy">>} =
+              Query,
+          TopXMLNS) ->
+    encode_muc_light_destroy(Query, TopXMLNS);
+do_encode({muc_light_destroy, <<>>} = Query,
+          TopXMLNS = <<"urn:xmpp:muclight:0#destroy">>) ->
+    encode_muc_light_destroy(Query, TopXMLNS);
 do_encode({muc_light_configuration, _} = Configuration,
           TopXMLNS) ->
     encode_muc_light_configuration(Configuration, TopXMLNS);
@@ -81,6 +95,7 @@ do_get_name({muc_light_aff, _}) -> <<"query">>;
 do_get_name({muc_light_configuration, _}) ->
     <<"configuration">>;
 do_get_name({muc_light_create, _, _}) -> <<"query">>;
+do_get_name({muc_light_destroy, _}) -> <<"query">>;
 do_get_name({muc_light_occupants, _}) ->
     <<"occupants">>;
 do_get_name({muc_light_user, _, _}) -> <<"user">>;
@@ -93,6 +108,7 @@ do_get_ns({muc_light_configuration, _}) ->
     <<"urn:xmpp:muclight:0#create">>;
 do_get_ns({muc_light_create, _, _}) ->
     <<"urn:xmpp:muclight:0#create">>;
+do_get_ns({muc_light_destroy, Xmlns}) -> Xmlns;
 do_get_ns({muc_light_occupants, _}) ->
     <<"urn:xmpp:muclight:0#create">>;
 do_get_ns({muc_light_user, _, _}) ->
@@ -103,6 +119,7 @@ do_get_ns({roomname, _}) ->
     <<"urn:xmpp:muclight:0#create">>.
 
 pp(muc_light_create, 2) -> [configuration, occupants];
+pp(muc_light_destroy, 1) -> [xmlns];
 pp(muc_light_configuration, 1) -> [roomname];
 pp(roomname, 1) -> [roomname];
 pp(muc_light_occupants, 1) -> [users];
@@ -113,6 +130,7 @@ pp(_, _) -> no.
 
 records() ->
     [{muc_light_create, 2},
+     {muc_light_destroy, 1},
      {muc_light_configuration, 1},
      {roomname, 1},
      {muc_light_occupants, 1},
@@ -515,6 +533,42 @@ encode_muc_light_configuration({muc_light_configuration,
                                                [encode_muc_light_roomname(Roomname,
                                                                           __TopXMLNS)
                                                 | _acc]).
+
+decode_muc_light_destroy(__TopXMLNS, __Opts,
+                         {xmlel, <<"query">>, _attrs, _els}) ->
+    Xmlns = decode_muc_light_destroy_attrs(__TopXMLNS,
+                                           _attrs,
+                                           undefined),
+    {muc_light_destroy, Xmlns}.
+
+decode_muc_light_destroy_attrs(__TopXMLNS,
+                               [{<<"xmlns">>, _val} | _attrs], _Xmlns) ->
+    decode_muc_light_destroy_attrs(__TopXMLNS,
+                                   _attrs,
+                                   _val);
+decode_muc_light_destroy_attrs(__TopXMLNS, [_ | _attrs],
+                               Xmlns) ->
+    decode_muc_light_destroy_attrs(__TopXMLNS,
+                                   _attrs,
+                                   Xmlns);
+decode_muc_light_destroy_attrs(__TopXMLNS, [], Xmlns) ->
+    decode_muc_light_destroy_attr_xmlns(__TopXMLNS, Xmlns).
+
+encode_muc_light_destroy({muc_light_destroy, Xmlns},
+                         __TopXMLNS) ->
+    __NewTopXMLNS = xmpp_codec:choose_top_xmlns(Xmlns,
+                                                [<<"urn:xmpp:muclight:0#destroy">>],
+                                                __TopXMLNS),
+    _els = [],
+    _attrs = xmpp_codec:enc_xmlns_attrs(__NewTopXMLNS,
+                                        __TopXMLNS),
+    {xmlel, <<"query">>, _attrs, _els}.
+
+decode_muc_light_destroy_attr_xmlns(__TopXMLNS,
+                                    undefined) ->
+    <<>>;
+decode_muc_light_destroy_attr_xmlns(__TopXMLNS, _val) ->
+    _val.
 
 decode_muc_light_create(__TopXMLNS, __Opts,
                         {xmlel, <<"query">>, _attrs, _els}) ->
