@@ -45,6 +45,11 @@ do_decode(<<"query">>, <<"urn:xmpp:muclight:0#create">>,
     decode_muc_light_create(<<"urn:xmpp:muclight:0#create">>,
                             Opts,
                             El);
+do_decode(<<"query">>,
+          <<"urn:xmpp:muclight:0#destroy">>, El, Opts) ->
+    decode_muc_light_create(<<"urn:xmpp:muclight:0#destroy">>,
+                            Opts,
+                            El);
 do_decode(Name, <<>>, _, _) ->
     erlang:error({xmpp_codec, {missing_tag_xmlns, Name}});
 do_decode(Name, XMLNS, _, _) ->
@@ -58,7 +63,8 @@ tags() ->
      {<<"occupants">>, <<"urn:xmpp:muclight:0#create">>},
      {<<"roomname">>, <<"urn:xmpp:muclight:0#create">>},
      {<<"configuration">>, <<"urn:xmpp:muclight:0#create">>},
-     {<<"query">>, <<"urn:xmpp:muclight:0#create">>}].
+     {<<"query">>, <<"urn:xmpp:muclight:0#create">>},
+     {<<"query">>, <<"urn:xmpp:muclight:0#destroy">>}].
 
 do_encode({muc_light_create, _, _} = Query, TopXMLNS) ->
     encode_muc_light_create(Query, TopXMLNS);
@@ -589,10 +595,10 @@ encode_muc_light_create({muc_light_create,
                          Configuration,
                          Occupants},
                         __TopXMLNS) ->
-    __NewTopXMLNS =
-        xmpp_codec:choose_top_xmlns(<<"urn:xmpp:muclight:0#create">>,
-                                    [],
-                                    __TopXMLNS),
+    __NewTopXMLNS = xmpp_codec:choose_top_xmlns(<<>>,
+                                                [<<"urn:xmpp:muclight:0#create">>,
+                                                 <<"urn:xmpp:muclight:0#destroy">>],
+                                                __TopXMLNS),
     _els =
         lists:reverse('encode_muc_light_create_$occupants'(Occupants,
                                                            __NewTopXMLNS,

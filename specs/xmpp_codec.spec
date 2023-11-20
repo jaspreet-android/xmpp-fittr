@@ -5,7 +5,7 @@
 
 -xml(muc_light_create,
      #elem{name = <<"query">>,
-           xmlns = <<"urn:xmpp:muclight:0#create">>,
+           xmlns = [<<"urn:xmpp:muclight:0#create">>, <<"urn:xmpp:muclight:0#destroy">>],
 	   module = 'muc_light',
            result = {muc_light_create, '$configuration', '$occupants'},
            refs = [#ref{name = muc_light_configuration,label = '$configuration'},
