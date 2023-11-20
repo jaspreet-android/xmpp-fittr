@@ -369,9 +369,6 @@ get_mod(<<"PRIVATE">>, <<"vcard-temp">>) -> xep0054;
 get_mod(<<"pubsub">>,
         <<"http://jabber.org/protocol/pubsub">>) ->
     xep0060;
-get_mod(<<"query">>,
-        <<"urn:xmpp:muclight:0#destroy">>) ->
-    muc_light;
 get_mod(<<"x">>,
         <<"urn:xmpp:muclight:0#affiliations">>) ->
     muc_light;

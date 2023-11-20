@@ -5,11 +5,17 @@
 
 -xml(muc_light_create,
      #elem{name = <<"query">>,
-           xmlns = [<<"urn:xmpp:muclight:0#create">>, <<"urn:xmpp:muclight:0#destroy">>],
+           xmlns = <<"urn:xmpp:muclight:0#create">>,
 	   module = 'muc_light',
            result = {muc_light_create, '$configuration', '$occupants'},
            refs = [#ref{name = muc_light_configuration,label = '$configuration'},
                    #ref{name = muc_light_occupants,label = '$occupants'}]}).
+
+-xml(muc_light_destroy,
+     #elem{name = <<"query">>,
+           xmlns =  <<"urn:xmpp:muclight:0#destroy">>,
+	       module = 'muc_light',
+           result = true.
 
 -xml(muc_light_configuration,
      #elem{name = <<"configuration">>,
