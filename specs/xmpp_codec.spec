@@ -22,8 +22,9 @@
      #elem{name = <<"configuration">>,
 	   xmlns = <<"urn:xmpp:muclight:0#create">>,
 	   module = 'muc_light',
-	   result = {muc_light_configuration, '$roomname'},
-	   refs = [#ref{name = muc_light_roomname, label = '$roomname'}]}).
+	   result = {muc_light_configuration, '$roomname', '$description'},
+	   refs = [#ref{name = muc_light_roomname, label = '$roomname'},
+    		   #ref{name = muc_light_description, label = '$description'}]}).
 
 -xml(muc_light_roomname,
      #elem{name = <<"roomname">>,
@@ -31,6 +32,13 @@
 	   module = 'muc_light',
 	   result = {roomname, '$roomname'},
 	   cdata = #cdata{label = '$roomname', required = true}}).
+
+ -xml(muc_light_description,
+     #elem{name = <<"description">>,
+           xmlns = <<"urn:xmpp:muclight:0#create">>,
+           module = 'muc_light',
+           result = {description, '$description'},
+           cdata = #cdata{label = '$description', required = true}}).
 
 -xml(muc_light_occupants,
      #elem{name = <<"occupants">>,
